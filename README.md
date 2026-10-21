@@ -1,4 +1,4 @@
-# oxlint-kit
+# ITSKAZU-OXLINT-RULES-KIT-TS
 
 Profile-based Oxlint setup. One command generates layered presets (base, framework,
 sonarjs, vendored anti-slop, strict), a thin `oxlint.config.ts`, package scripts,
@@ -41,15 +41,15 @@ adopted automatically; its profile and mode are read from the generated preset h
 
 ## Develop
 
-    pnpm install
-    pnpm sync-anti-slop          # populate vendor/ (commit it)
-    pnpm test                    # first run writes snapshots; commit them
-    pnpm build
+    bun install
+    bun sync-anti-slop          # populate vendor/ (commit it)
+    bun test                    # first run writes snapshots; commit them
+    bun build
     node dist/cli.js init --dry-run --cwd ../some-project
-    E2E_PM=pnpm pnpm test:e2e
+    E2E_PM=bun bun test:e2e
 
 Bumping tested versions: edit `src/compat.ts`, run the E2E suite, add a changeset.
-Bumping anti-slop: `pnpm sync-anti-slop --head` (or `--sha <sha>`), review `git diff vendor/`.
+Bumping anti-slop: `bun sync-anti-slop --head` (or `--sha <sha>`), review `git diff vendor/`.
 
 ## Release
 
