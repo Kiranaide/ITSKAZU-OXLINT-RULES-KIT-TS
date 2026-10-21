@@ -1,0 +1,49 @@
+{
+  "name": "@your-scope/oxlint-kit",
+  "version": "0.1.0",
+  "description": "Profile-based Oxlint setup: generated presets, sonarjs, vendored anti-slop, Prettier and a violation baseline.",
+  "keywords": ["oxlint", "lint", "cli", "sonarjs", "prettier"],
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "oxlint-kit": "./dist/cli.js"
+  },
+  "files": ["dist", "vendor", "templates"],
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-name/oxlint-kit.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "sync-anti-slop": "node scripts/sync-anti-slop.ts",
+    "check-vendor": "node scripts/sync-anti-slop.ts --check",
+    "prepublishOnly": "pnpm run check-vendor && pnpm run build",
+    "changeset": "changeset",
+    "release": "changeset publish"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "citty": "^0.1.6",
+    "cross-spawn": "^7.0.6",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.0",
+    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^22.18.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
