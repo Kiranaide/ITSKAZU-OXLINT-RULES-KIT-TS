@@ -1,20 +1,30 @@
 {
-  "name": "@your-scope/oxlint-kit",
+  "name": "@kiranaide/oxlint-kit",
   "version": "0.1.0",
   "description": "Profile-based Oxlint setup: generated presets, sonarjs, vendored anti-slop, Prettier and a violation baseline.",
-  "keywords": ["oxlint", "lint", "cli", "sonarjs", "prettier"],
+  "keywords": [
+    "oxlint",
+    "lint",
+    "cli",
+    "sonarjs",
+    "prettier"
+  ],
   "license": "MIT",
   "type": "module",
   "bin": {
     "oxlint-kit": "./dist/cli.js"
   },
-  "files": ["dist", "vendor", "templates"],
+  "files": [
+    "dist",
+    "vendor",
+    "templates"
+  ],
   "engines": {
     "node": ">=22.18.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-name/oxlint-kit.git"
+    "url": "git+https://github.com/Kiranaide/ITSKAZU-OXLINT-RULES-KIT-TS.git"
   },
   "publishConfig": {
     "access": "public",
