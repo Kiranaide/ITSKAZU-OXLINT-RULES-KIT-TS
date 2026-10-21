@@ -27,8 +27,7 @@
     "url": "git+https://github.com/Kiranaide/ITSKAZU-OXLINT-RULES-KIT-TS.git"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "scripts": {
     "build": "tsup",
@@ -38,7 +37,7 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "sync-anti-slop": "node scripts/sync-anti-slop.ts",
     "check-vendor": "node scripts/sync-anti-slop.ts --check",
-    "prepublishOnly": "pnpm run check-vendor && pnpm run build",
+    "prepublishOnly": "bun run check-vendor && bun run build",
     "changeset": "changeset",
     "release": "changeset publish"
   },
