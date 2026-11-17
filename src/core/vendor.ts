@@ -2,29 +2,37 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { readJson } from "../env/fs";
 import { fail } from "../errors";
-import { PKG_NAME, PKG_VERSION, VENDOR_DIR, VENDOR_LOCK } from "../meta";
+import { KIRA_DIR, KIRA_LOCK, PKG_NAME, PKG_VERSION, VENDOR_DIR, VENDOR_LOCK } from "../meta";
 import { hashDir } from "./hash";
 
-export interface BundledAntiSlop {
+export interface BundledPlugin {
   dir: string;
   repo: string;
   sha: string;
   contentHash: string;
 }
 
-export function loadBundledAntiSlop(): BundledAntiSlop {
-  const lock = readJson<{ repo?: string; sha?: string; contentHash?: string }>(VENDOR_LOCK);
+function loadBundled(dir: string, lockPath: string, name: string, missing: string): BundledPlugin {
+  const lock = readJson<{ repo?: string; sha?: string; contentHash?: string }>(lockPath);
   const { repo, sha, contentHash } = lock ?? {};
-  if (!repo || !sha || !contentHash || !existsSync(join(VENDOR_DIR, "index.ts"))) {
-    fail(`This build of ${PKG_NAME} has no bundled anti-slop copy. Maintainers: run \`pnpm sync-anti-slop\` before building.`);
+  if (!repo || !sha || !contentHash || !existsSync(join(dir, "index.ts"))) {
+    fail(`This build of ${PKG_NAME} has no bundled ${name} copy. ${missing}`);
   }
-  if (hashDir(VENDOR_DIR) !== contentHash) {
-    fail(`The anti-slop copy bundled in ${PKG_NAME}@${PKG_VERSION} does not match its lock hash. Reinstall the package.`);
+  if (hashDir(dir) !== contentHash) {
+    fail(`The ${name} copy bundled in ${PKG_NAME}@${PKG_VERSION} does not match its lock hash. Reinstall the package.`);
   }
-  return { dir: VENDOR_DIR, repo, sha, contentHash };
+  return { dir, repo, sha, contentHash };
 }
 
-export const provenance = (bundled: BundledAntiSlop): string =>
-  `# anti-slop provenance\n\nSource: ${bundled.repo}\nCommit: ${bundled.sha}\nContent hash: ${bundled.contentHash}\n\n` +
+export function loadBundledAntiSlop(): BundledPlugin {
+  return loadBundled(VENDOR_DIR, VENDOR_LOCK, "anti-slop", "Maintainers: run `bun run sync-anti-slop` before building.");
+}
+
+export function loadBundledKira(): BundledPlugin {
+  return loadBundled(KIRA_DIR, KIRA_LOCK, "kira", "Maintainers: vendor/kira is a committed port; see vendor/kira/UPSTREAM.md.");
+}
+
+export const provenance = (bundled: BundledPlugin, name: string): string =>
+  `# ${name} provenance\n\nSource: ${bundled.repo}\nCommit: ${bundled.sha}\nContent hash: ${bundled.contentHash}\n\n` +
   `Vendored by ${PKG_NAME}@${PKG_VERSION}; recorded in tools/oxlint/oxlint-kit.json.\n` +
   `Do not edit by hand: the hash check will flag it. Move forward with \`npx ${PKG_NAME} update\`.\n`;

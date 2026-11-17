@@ -13,7 +13,7 @@ export type RuleSpec = readonly [name: string, layer: Layer, options?: unknown];
 export const PRESET_IDS = ["base", "react", "next", "node", "sonar", "anti-slop", "strict"] as const;
 export type PresetId = (typeof PRESET_IDS)[number];
 
-/** Native Oxlint plugins enabled per preset. anti-slop loads through jsPlugins. */
+/** Native Oxlint plugins enabled per preset. anti-slop and kira load through jsPlugins. */
 export const PRESET_PLUGINS: Record<PresetId, string[]> = {
   base: ["typescript", "unicorn", "oxc"],
   react: ["react", "jsx-a11y"],
@@ -139,6 +139,12 @@ export const RULES: Record<PresetId, RuleSpec[]> = {
     ["anti-slop/no-unknown-returns", "soft"],
     ["anti-slop/no-unknown-type-aliases", "soft"],
     ["anti-slop/require-readable-spacing", "soft"],
+    // Curated comment/test hygiene ported from Kiranaide/t3-kira (oxlint-plugin-t3code).
+    ["kira/require-suppression-reason", "soft"],
+    ["kira/no-low-value-comments", "soft"],
+    ["kira/no-test-in-loop", "soft"],
+    ["kira/no-wall-clock-in-tests", "soft"],
+    ["kira/no-test-timeout-or-unreasoned-skip", "soft"],
   ],
   strict: [
     ["eslint/no-nested-ternary", "soft"],

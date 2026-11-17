@@ -16,7 +16,7 @@ const main = defineCommand({
   meta: {
     name: BIN_NAME,
     version: PKG_VERSION,
-    description: "Profile-based Oxlint setup: presets, sonar-style checks, vendored anti-slop, Prettier, baseline",
+    description: "Profile-based Oxlint setup: presets, sonar-style checks, vendored anti-slop + kira, Prettier, baseline",
   },
   subCommands: {
     init: initCommand,

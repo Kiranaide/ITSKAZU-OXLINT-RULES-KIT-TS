@@ -29,7 +29,7 @@ export function printReport(result: InstallResult, log: Logger): void {
   log.raw(`  ${run} lint:strict     adds --type-aware`);
   if (result.settings.baseline) log.raw(`  ${run} lint:ci         CI: fails only on new violations (baseline)`);
   log.raw(`  ${run} check           lint:strict + tsc${result.settings.prettier ? " + prettier" : ""}`);
-  log.raw(`  npx ${PKG_NAME} update   tested versions + bundled anti-slop (shows a diff first)`);
+  log.raw(`  npx ${PKG_NAME} update   tested versions + bundled vendored rules (shows a diff first)`);
   log.raw(`  npx ${PKG_NAME} doctor   diagnose the setup`);
   if (result.configSnippet) log.raw(`\nMerge into your oxlint.config.ts:\n${result.configSnippet}`);
   log.raw(rule);
@@ -45,6 +45,7 @@ export function printChanges(log: Logger, changes: PendingChanges): void {
   };
   section("tools/oxlint/presets", changes.presets);
   section("tools/oxlint/anti-slop", changes.antiSlop);
+  section("tools/oxlint/kira", changes.kira);
   if (changes.deps.toInstall.length) {
     log.info(`dependencies: ${changes.deps.toInstall.map((d) => `${d.name}@${d.version}`).join(", ")}`);
   }

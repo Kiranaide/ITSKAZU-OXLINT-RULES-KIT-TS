@@ -44,10 +44,12 @@ function scaffold(f: Fixture): void {
 }
 
 function writeProbe(root: string): void {
-  // Self-comparison -> eslint/no-self-compare (sonar preset); unawaited fetch -> no-floating-promises (type-aware).
+  // Self-comparison -> eslint/no-self-compare (sonar preset); unawaited promise ->
+  // no-floating-promises (type-aware, no DOM lib needed); unexplained suppression ->
+  // kira(require-suppression-reason).
   writeFileSync(
     join(root, "src", "probe.ts"),
-    `export const same = (n: number): boolean => n === n;\nexport async function p(): Promise<void> {\n  fetch("x");\n}\n`,
+    `export const same = (n: number): boolean => n === n;\nexport function floating(): void {\n  Promise.resolve();\n}\n// eslint-disable-next-line eslint/no-self-compare\nexport const alsoSame = (n: number): boolean => n === n;\n`,
   );
 }
 
@@ -77,6 +79,7 @@ describe(`init/doctor/update across TypeScript states with ${pm}`, () => {
         const lint = runOxlint(root, false);
         expect(lint.stderr).not.toMatch(/TypeError|Cannot read properties of undefined/);
         expect(lint.stdout).toContain("eslint(no-self-compare)");
+        expect(lint.stdout).toContain("kira(require-suppression-reason)");
       });
 
       it("type-aware lint reports no-floating-promises", () => {
@@ -106,11 +109,16 @@ describe(`init/doctor/update across TypeScript states with ${pm}`, () => {
   }
 
   it("writes an install record without TS-resolution state", () => {
-    const statePath = join(dir, "ts7-plain", "tools", "oxlint", "oxlint-kit.json");
+    const project = join(dir, "ts7-plain");
+    const statePath = join(project, "tools", "oxlint", "oxlint-kit.json");
     expect(existsSync(statePath)).toBe(true);
-    const state = JSON.parse(readFileSync(statePath, "utf8")) as { profile?: string; mode?: string; tsResolution?: string };
+    const state = JSON.parse(readFileSync(statePath, "utf8")) as { profile?: string; mode?: string; tsResolution?: string; kira?: { sha?: string } };
     expect(state.profile).toBe("ts");
     expect(state.mode).toBe("adopt");
     expect(state.tsResolution).toBeUndefined();
+    expect(state.kira?.sha).toMatch(/^[0-9a-f]{40}$/);
+    expect(existsSync(join(project, "tools", "oxlint", "kira", "index.ts"))).toBe(true);
+    const scope = JSON.parse(readFileSync(join(project, "tools", "oxlint", "package.json"), "utf8")) as { type?: string };
+    expect(scope.type).toBe("module");
   });
 });

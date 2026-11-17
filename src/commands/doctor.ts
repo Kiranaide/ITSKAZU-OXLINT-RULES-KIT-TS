@@ -66,13 +66,17 @@ function diagnose(root: string, pmOverride: PackageManager | undefined, smoke: b
 
   const ownership = vendoredOwnership(paths);
   const ownershipCheck: Record<typeof ownership, [Status, string]> = {
-    none: ["fail", "tools/oxlint/anti-slop is missing"],
+    none: ["fail", "tools/oxlint vendored copies are missing; run init"],
     managed: ["ok", "matches the install record"],
-    legacy: ["warn", "matches the legacy lockfile; run update to migrate"],
+    legacy: ["warn", "anti-slop matches the legacy lockfile; run update to migrate"],
     edited: ["fail", "edited locally (hash mismatch); update --force restores it"],
     unknown: ["warn", "no install record to verify against"],
   };
-  add("anti-slop", ...ownershipCheck[ownership]);
+  add("vendored plugins", ...ownershipCheck[ownership]);
+
+  if (env.pkg.type === "commonjs" && existsSync(paths.config)) {
+    add("module type", "warn", '"type": "commonjs": rename oxlint.config.ts to oxlint.config.mts so Node loads it as ESM');
+  }
 
   if (settings) {
     const profile = PROFILES[settings.profile];
@@ -97,7 +101,7 @@ function diagnose(root: string, pmOverride: PackageManager | undefined, smoke: b
   if (smoke && oxlint && existsSync(paths.config)) {
     try {
       const result = runSmoke(root, env.pm, paths.config, paths.doctorDir);
-      add("plugins load", result.ok ? "ok" : "fail", result.ok ? "sonar and anti-slop rules report on a fixture" : `missing: ${result.missing.join(", ")} (check overrides in oxlint.config.ts)`);
+      add("plugins load", result.ok ? "ok" : "fail", result.ok ? "sonar, anti-slop and kira rules report on a fixture" : `missing: ${result.missing.join(", ")} (check overrides in oxlint.config.ts)`);
     } finally {
       rmSync(paths.doctorDir, { recursive: true, force: true });
     }

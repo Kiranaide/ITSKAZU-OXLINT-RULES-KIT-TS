@@ -13,10 +13,21 @@ export const SMOKE_FIXTURE = `export function smoke(a: number): boolean {
 export const same = (n: number): boolean => n === n;
 
 export const doubled = [1, 2, 3].filter((n) => n > 1).map((n) => n * 2);
+
+export function floating(): void {
+  Promise.resolve();
+}
+
+// eslint-disable-next-line eslint/no-self-compare
+export const alsoSame = (n: number): boolean => n === n;
 `;
 
-/** One native sonar-preset rule and one vendored JS-plugin rule: proves both layers report. */
-export const SMOKE_EXPECTED = ["eslint(no-self-compare)", "anti-slop(no-array-filter-map)"];
+/** One native sonar rule and one rule per vendored JS plugin: proves every layer reports. */
+export const SMOKE_EXPECTED = [
+  "eslint(no-self-compare)",
+  "anti-slop(no-array-filter-map)",
+  "kira(require-suppression-reason)",
+];
 
 /** Proves tsgolint actually ran type-aware when asked to. */
 export const SMOKE_TYPEAWARE_EXPECTED = "typescript(no-floating-promises)";

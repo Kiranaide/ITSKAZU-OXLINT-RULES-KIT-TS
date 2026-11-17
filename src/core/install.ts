@@ -22,11 +22,15 @@ import { runSmoke } from "./smoke";
 import { vendoredOwnership, type InstallState, type Ownership } from "./state";
 import { collectViolations, type ViolationSummary } from "./summary";
 import { Transaction } from "./transaction";
-import { loadBundledAntiSlop, provenance } from "./vendor";
+import { loadBundledAntiSlop, loadBundledKira, provenance } from "./vendor";
+
+/** Node loads the vendored .ts plugins and presets as ESM only under a type:module scope. */
+const ESM_SCOPE = '{"type":"module"}\n';
 
 export interface PendingChanges {
   presets: DirDiff;
   antiSlop: DirDiff;
+  kira: DirDiff;
   deps: DepPlan;
 }
 
@@ -55,6 +59,7 @@ export interface InstallResult {
   packageManager: PackageManager;
   settings: { prettier: boolean; baseline: boolean };
   antiSlop: { sha: string; ownership: Ownership };
+  kira: { sha: string; ownership: Ownership };
   dependencies: { install: string[]; keep: string[] };
   scripts: { add: string[]; keep: string[] };
   notes: string[];
@@ -95,7 +100,10 @@ function collectNotes({ env, profile, deps, scripts, configExists, configIsOurs,
     notes.push(`oxlint.config.ts imports presets that do not match the "${profile.id}" profile. Not touched; update its imports from the snippet at the end.`);
   }
   if (profile.experimental) {
-    notes.push(`The "${profile.id}" profile is experimental: Oxlint only partly supports these files, and JS-plugin rules (anti-slop) may not run on them.`);
+    notes.push(`The "${profile.id}" profile is experimental: Oxlint only partly supports these files, and JS-plugin rules (anti-slop, kira) may not run on them.`);
+  }
+  if (env.pkg.type === "commonjs") {
+    notes.push('package.json has "type": "commonjs": Node loads oxlint.config.ts as CommonJS there. Rename it to oxlint.config.mts (same content, auto-discovered); the vendored plugins are already ESM-scoped.');
   }
   if (env.workspace.isWorkspaceRoot) notes.push("Monorepo detected. v1 installs at the root only; per-package profiles are not supported yet.");
   if (env.workspace.parentRoot) notes.push(`This folder is inside a workspace (${env.workspace.parentRoot}). v1 is meant to run at the workspace root.`);
@@ -111,7 +119,7 @@ function addDeps(env: Environment, specs: string[], log: Logger): void {
 }
 
 function smokeGate(env: Environment, paths: ProjectPaths, stagedConfig: string, log: Logger): void {
-  log.step("Smoke test: loading staged presets and running sonar + anti-slop rules...");
+  log.step("Smoke test: loading staged presets and running sonar, anti-slop and kira rules...");
   const smoke = runSmoke(env.root, env.pm, stagedConfig, paths.staging);
   if (!smoke.ok) {
     fail(
@@ -119,7 +127,7 @@ function smokeGate(env: Environment, paths: ProjectPaths, stagedConfig: string, 
         "Nothing in tools/oxlint or your config was changed. Dependencies installed above remain; use git (or the backup) to review/revert.",
     );
   }
-  log.ok("Smoke test passed (sonar and anti-slop rules report).");
+  log.ok("Smoke test passed (sonar, anti-slop and kira rules report).");
 
   log.step("Smoke test (type-aware): proving tsgolint reports type errors...");
   const taSmoke = runSmoke(env.root, env.pm, stagedConfig, paths.staging, true);
@@ -149,6 +157,7 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
   const env = detectEnvironment(root, options.pm);
   const paths = projectPaths(root);
   const bundled = loadBundledAntiSlop();
+  const kira = loadBundledKira();
   const deps = planDependencies(root, profile, options.prettier, options.deps);
   const scripts = planScripts(env.pkg.scripts, { prettier: options.prettier, baseline: options.baseline });
   const ownership = vendoredOwnership(paths);
@@ -165,6 +174,7 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
     packageManager: env.pm,
     settings: { prettier: options.prettier, baseline: options.baseline },
     antiSlop: { sha: bundled.sha, ownership },
+    kira: { sha: kira.sha, ownership },
     dependencies: { install: deps.toInstall.map((d) => `${d.name}@${d.version}`), keep: deps.kept },
     scripts: { add: scripts.add.map(([name]) => name), keep: scripts.keep },
     notes,
@@ -180,6 +190,8 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
   const writes = [
     `tools/oxlint/presets/{${profile.presets.join(",")}}.ts`,
     "tools/oxlint/anti-slop/",
+    "tools/oxlint/kira/",
+    "tools/oxlint/package.json (ESM scope)",
     "tools/oxlint/oxlint-kit.json",
     ...(configExists ? [] : ["oxlint.config.ts"]),
     ...(options.baseline ? ["tools/oxlint/baseline-check.mjs"] : []),
@@ -188,6 +200,7 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
   ];
   log.step(`Profile ${profile.id}${profile.experimental ? " (experimental)" : ""}, mode ${mode}, package manager ${env.pm}`);
   log.step(`anti-slop ${bundled.sha.slice(0, 12)} (bundled with ${PKG_NAME}@${PKG_VERSION})`);
+  log.step(`kira ${kira.sha.slice(0, 12)} (curated port bundled with ${PKG_NAME}@${PKG_VERSION})`);
   log.info(`install : ${result.dependencies.install.join(", ") || "(nothing new)"}`);
   log.info(`keep    : ${deps.kept.join(", ") || "(none)"}`);
   log.info(`write   : ${writes.join(", ")}`);
@@ -196,8 +209,8 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
   if ((ownership === "edited" || ownership === "unknown") && !options.force) {
     const message =
       ownership === "edited"
-        ? "tools/oxlint/anti-slop was edited locally (its hash differs from the install record). Review it, then pass --force to replace it."
-        : "tools/oxlint/anti-slop exists without an install record. Pass --force to replace it with the bundled copy.";
+        ? "tools/oxlint/anti-slop or tools/oxlint/kira was edited locally (its hash differs from the install record). Review it, then pass --force to replace it."
+        : "Vendored copies exist in tools/oxlint without an install record. Pass --force to replace them with the bundled copies.";
     if (!options.dryRun) fail(message);
     log.warn(message);
   }
@@ -224,15 +237,20 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
   const changed: string[] = [];
   const stagedOxlint = join(paths.staging, "tools", "oxlint");
   const stagedVendored = join(stagedOxlint, "anti-slop");
+  const stagedKira = join(stagedOxlint, "kira");
   const stagedPresets = join(stagedOxlint, "presets");
-  const stagedConfig = join(paths.staging, "oxlint.config.ts");
+  // .mts: the smoke config must load as ESM even in type:commonjs projects.
+  const stagedConfig = join(paths.staging, "oxlint.config.mts");
 
   try {
     // ---- stage -----------------------------------------------------------
     rmSync(paths.staging, { recursive: true, force: true });
     mkdirSync(stagedPresets, { recursive: true });
+    writeFileSync(join(stagedOxlint, "package.json"), ESM_SCOPE);
     cpSync(bundled.dir, stagedVendored, { recursive: true });
-    writeFileSync(join(stagedVendored, PROVENANCE_FILE), provenance(bundled));
+    writeFileSync(join(stagedVendored, PROVENANCE_FILE), provenance(bundled, "anti-slop"));
+    cpSync(kira.dir, stagedKira, { recursive: true });
+    writeFileSync(join(stagedKira, PROVENANCE_FILE), provenance(kira, "kira"));
     for (const preset of profile.presets) {
       writeFileSync(join(stagedPresets, `${preset}.ts`), renderPreset(preset, profile, mode));
     }
@@ -242,6 +260,7 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
       const changes: PendingChanges = {
         presets: diffDirs(paths.presets, stagedPresets),
         antiSlop: diffDirs(paths.vendored, stagedVendored),
+        kira: diffDirs(paths.kira, stagedKira),
         deps,
       };
       if (!(await options.confirmChanges(changes))) fail("Update declined. Nothing was changed.");
@@ -269,12 +288,15 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
       prettier: options.prettier,
       baseline: options.baseline,
       antiSlop: { repo: bundled.repo, sha: bundled.sha, contentHash: bundled.contentHash },
+      kira: { repo: kira.repo, sha: kira.sha, contentHash: kira.contentHash },
     };
+    tx.writeFile(paths.esmScope, ESM_SCOPE);
     tx.replaceDir(stagedVendored, paths.vendored);
+    tx.replaceDir(stagedKira, paths.kira);
     tx.replaceDir(stagedPresets, paths.presets);
     tx.writeFile(paths.state, `${JSON.stringify(state, null, 2)}\n`);
     tx.removeFile(paths.legacyLock);
-    changed.push("tools/oxlint/anti-slop/", "tools/oxlint/presets/", "tools/oxlint/oxlint-kit.json");
+    changed.push("tools/oxlint/anti-slop/", "tools/oxlint/kira/", "tools/oxlint/package.json", "tools/oxlint/presets/", "tools/oxlint/oxlint-kit.json");
 
     if (!configExists) {
       tx.writeFile(paths.config, renderConfig(profile));
