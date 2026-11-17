@@ -1,7 +1,7 @@
 # ITSKAZU-OXLINT-RULES-KIT-TS
 
 Profile-based Oxlint setup. One command generates layered presets (base, framework,
-sonarjs, vendored anti-slop, strict), a thin `oxlint.config.ts`, package scripts,
+sonar, vendored anti-slop, strict), a thin `oxlint.config.ts`, package scripts,
 Prettier wiring and an optional violation baseline for CI.
 
 ## Use
@@ -39,19 +39,35 @@ when a file/rule pair gets worse.
 Run `init` or `update` in the project. A clean legacy install (lockfile hash matches) is
 adopted automatically; its profile and mode are read from the generated preset headers.
 
+### TypeScript 7 and type-aware linting
+
+`lint:strict` and `check` run Oxlint's type-aware rules through `oxlint-tsgolint`, which
+bundles its own compiler: they work on TypeScript 5, 6 and 7 alike. Your `typescript`
+dependency is never modified.
+
+The `sonar` preset is built from native Oxlint rules that mirror SonarJS's syntax-only
+bug checks. `eslint-plugin-sonarjs` is not installed: it crashes on TypeScript 7 (the
+native compiler ships no JavaScript API), and Oxlint has no native sonarjs port yet.
+Sonar checks without a native equivalent (e.g. `no-identical-functions`,
+`no-hardcoded-passwords`, `no-clear-text-protocols`) are not covered; `eslint/complexity`
+in the base preset still caps complexity.
+
+In the editor, set `typeAware: true` in the Oxc VS Code extension settings to match
+`lint:strict`.
+
 ## Develop
 
     bun install
-    bun sync-anti-slop          # populate vendor/ (commit it)
-    bun test                    # first run writes snapshots; commit them
-    bun build
+    bun run sync-anti-slop      # populate vendor/ (commit it)
+    bun run test                # first run writes snapshots; commit them
+    bun run build
     node dist/cli.js init --dry-run --cwd ../some-project
-    E2E_PM=bun bun test:e2e
+    E2E_PM=bun bun run test:e2e
 
 Bumping tested versions: edit `src/compat.ts`, run the E2E suite, add a changeset.
-Bumping anti-slop: `bun sync-anti-slop --head` (or `--sha <sha>`), review `git diff vendor/`.
+Bumping anti-slop: `bun run sync-anti-slop --head` (or `--sha <sha>`), review `git diff vendor/`.
 
 ## Release
 
-Changesets + GitHub Actions. Add an `NPM_TOKEN` secret (or configure npm trusted
-publishing), merge the "Version Packages" PR, and the workflow publishes with provenance.
+Changesets + GitHub Actions (bun). Add an `NPM_TOKEN` secret, merge the
+"Version Packages" PR, and the workflow publishes to npm.

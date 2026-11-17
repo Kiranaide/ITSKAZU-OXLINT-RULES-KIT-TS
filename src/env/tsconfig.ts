@@ -12,3 +12,17 @@ export function readTsStrict(path: string): boolean | null {
     return /"strict"\s*:\s*true/.test(raw) ? true : null;
   }
 }
+
+/** True when the tsconfig includes the whole tree (double-star globs) — tsgolint would type-check build output and get slow. */
+export function tsIncludesEverything(path: string): boolean {
+  if (!existsSync(path)) return false;
+  const raw = readFileSync(path, "utf8");
+  const cleaned = raw.replace(/\/\*[\s\S]*?\*\/|^\s*\/\/.*$/gm, "").replace(/,(\s*[}\]])/g, "$1");
+  try {
+    const parsed = JSON.parse(cleaned) as { include?: unknown };
+    const include = parsed.include;
+    return Array.isArray(include) && include.some((e) => typeof e === "string" && /\*\*|\*/.test(e) && !e.startsWith("src"));
+  } catch {
+    return false;
+  }
+}

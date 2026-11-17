@@ -2,12 +2,12 @@ import * as p from "@clack/prompts";
 import { CancelledError } from "../errors";
 import type { Logger } from "./logger";
 
-export function unwrap<T>(value: T | symbol): T {
+export function unwrap<T>(value: T | typeof p.CANCEL_SYMBOL): T {
   if (p.isCancel(value)) {
     p.cancel("Cancelled.");
     throw new CancelledError("Cancelled. Nothing was changed.");
   }
-  return value as T;
+  return value;
 }
 
 export async function confirmAction(log: Logger, message: string, yes: boolean): Promise<boolean> {

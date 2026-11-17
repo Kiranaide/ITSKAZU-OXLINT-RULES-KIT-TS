@@ -36,11 +36,11 @@ const readLock = (): Lock | null => (existsSync(LOCK) ? (JSON.parse(readFileSync
 if (values.check) {
   const lock = readLock();
   if (!lock || !existsSync(join(VENDOR, "index.ts"))) {
-    console.error("vendor/anti-slop is missing. Run `pnpm sync-anti-slop` and commit the result.");
+    console.error("vendor/anti-slop is missing. Run `bun run sync-anti-slop` and commit the result.");
     process.exit(1);
   }
   if (hashDir(VENDOR) !== lock.contentHash) {
-    console.error("vendor/anti-slop does not match vendor/anti-slop.lock.json. Re-run `pnpm sync-anti-slop`.");
+    console.error("vendor/anti-slop does not match vendor/anti-slop.lock.json. Re-run `bun run sync-anti-slop`.");
     process.exit(1);
   }
   console.log(`vendor/anti-slop OK (${lock.sha.slice(0, 12)})`);

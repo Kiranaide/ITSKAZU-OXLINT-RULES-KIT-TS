@@ -37,14 +37,15 @@ function diagnose(root: string, pmOverride: PackageManager | undefined, smoke: b
   if (!env.hasTsconfig) add("tsconfig", "warn", "missing: type-aware rules need it");
   else add("tsconfig", env.tsStrict ? "ok" : "warn", env.tsStrict ? '"strict": true' : 'could not confirm "strict": true');
 
+  const tsVersion = installedVersion(root, "typescript");
+  add("typescript", tsVersion ? "ok" : "warn", tsVersion ?? "not installed (`typecheck` needs it)");
+
   const required: Record<CompatName, Status> = {
     oxlint: "fail",
     "oxlint-tsgolint": "warn",
-    "eslint-plugin-sonarjs": "fail",
     prettier: "warn",
-    eslint: "ok",
   };
-  for (const name of ["oxlint", "oxlint-tsgolint", "eslint-plugin-sonarjs", "prettier"] as const) {
+  for (const name of ["oxlint", "oxlint-tsgolint", "prettier"] as const) {
     const have = installedVersion(root, name);
     if (!have) add(name, required[name], "not installed");
     else if (have === COMPAT[name]) add(name, "ok", have);
@@ -96,7 +97,7 @@ function diagnose(root: string, pmOverride: PackageManager | undefined, smoke: b
   if (smoke && oxlint && existsSync(paths.config)) {
     try {
       const result = runSmoke(root, env.pm, paths.config, paths.doctorDir);
-      add("plugins load", result.ok ? "ok" : "fail", result.ok ? "sonarjs and anti-slop report on a fixture" : `missing: ${result.missing.join(", ")} (check overrides in oxlint.config.ts)`);
+      add("plugins load", result.ok ? "ok" : "fail", result.ok ? "sonar and anti-slop rules report on a fixture" : `missing: ${result.missing.join(", ")} (check overrides in oxlint.config.ts)`);
     } finally {
       rmSync(paths.doctorDir, { recursive: true, force: true });
     }

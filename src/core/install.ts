@@ -1,10 +1,9 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { COMPAT } from "../compat";
 import { detectEnvironment, type Environment } from "../env/detect";
 import { exec } from "../env/exec";
-import { findPackageDir } from "../env/fs";
 import { addDevCommand, type PackageManager } from "../env/pm";
+import { tsIncludesEverything } from "../env/tsconfig";
 import { fail } from "../errors";
 import { BASELINE_TEMPLATE, PKG_NAME, PKG_VERSION } from "../meta";
 import type { Profile, ProfileId } from "../profiles";
@@ -82,6 +81,9 @@ function collectNotes({ env, profile, deps, scripts, configExists, configIsOurs,
   const notes = [...deps.warnings];
   if (!env.hasTsconfig) notes.push("No tsconfig.json found: type-aware rules (`lint:strict`) need one.");
   else if (!env.tsStrict) notes.push('Could not confirm `"strict": true` in tsconfig.json (extends is not followed); the no-unsafe-* rules are noisy without it.');
+  const hasTsDep = Boolean({ ...env.pkg.dependencies, ...env.pkg.devDependencies }.typescript);
+  if (!hasTsDep && env.hasTsconfig) notes.push("tsconfig.json exists but typescript is not a dependency; `typecheck` needs it.");
+  if (tsIncludesEverything(join(env.root, "tsconfig.json"))) notes.push('tsconfig.json `include` covers the whole tree (e.g. "**/*"): type-aware linting will type-check build output and get slow. Scope it to ["src/**/*"] and exclude dist/build/coverage.');
   if (env.eslintConfigs.length) {
     notes.push(`ESLint config found (${env.eslintConfigs.join(", ")}). Not touched. Running both linters duplicates reports; see \`npx @oxlint/migrate\`.`);
   }
@@ -93,7 +95,7 @@ function collectNotes({ env, profile, deps, scripts, configExists, configIsOurs,
     notes.push(`oxlint.config.ts imports presets that do not match the "${profile.id}" profile. Not touched; update its imports from the snippet at the end.`);
   }
   if (profile.experimental) {
-    notes.push(`The "${profile.id}" profile is experimental: Oxlint only partly supports these files, and JS-plugin rules (sonarjs, anti-slop) may not run on them.`);
+    notes.push(`The "${profile.id}" profile is experimental: Oxlint only partly supports these files, and JS-plugin rules (anti-slop) may not run on them.`);
   }
   if (env.workspace.isWorkspaceRoot) notes.push("Monorepo detected. v1 installs at the root only; per-package profiles are not supported yet.");
   if (env.workspace.parentRoot) notes.push(`This folder is inside a workspace (${env.workspace.parentRoot}). v1 is meant to run at the workspace root.`);
@@ -108,22 +110,27 @@ function addDeps(env: Environment, specs: string[], log: Logger): void {
   if (result.status !== 0) fail(`\`${cmd} ${args.join(" ")}\` failed (exit ${result.status}).\n${lastLines(result.stderr || result.stdout, 15)}`);
 }
 
-function smokeGate(env: Environment, paths: ProjectPaths, profile: Profile, stagedConfig: string, log: Logger, changed: string[]): void {
-  log.step("Smoke test: loading staged presets and running sonarjs + anti-slop rules...");
-  let smoke = runSmoke(env.root, env.pm, stagedConfig, paths.staging);
-  if (!smoke.ok && profile.presets.includes("sonar") && !findPackageDir(env.root, "eslint")) {
-    log.warn("Plugins failed to load and `eslint` (the sonarjs peer) is not installed. Adding it as a last resort...");
-    addDeps(env, [`eslint@${COMPAT.eslint}`], log);
-    changed.push("package.json (eslint added for the sonarjs peer)");
-    smoke = runSmoke(env.root, env.pm, stagedConfig, paths.staging);
-  }
+function smokeGate(env: Environment, paths: ProjectPaths, stagedConfig: string, log: Logger): void {
+  log.step("Smoke test: loading staged presets and running sonar + anti-slop rules...");
+  const smoke = runSmoke(env.root, env.pm, stagedConfig, paths.staging);
   if (!smoke.ok) {
     fail(
       `Smoke test failed: expected diagnostics not produced (${smoke.missing.join(", ")}).\n${lastLines(smoke.output, 12)}\n` +
         "Nothing in tools/oxlint or your config was changed. Dependencies installed above remain; use git (or the backup) to review/revert.",
     );
   }
-  log.ok("Smoke test passed (sonarjs and anti-slop rules load and report).");
+  log.ok("Smoke test passed (sonar and anti-slop rules report).");
+
+  log.step("Smoke test (type-aware): proving tsgolint reports type errors...");
+  const taSmoke = runSmoke(env.root, env.pm, stagedConfig, paths.staging, true);
+  if (!taSmoke.ok) {
+    log.warn(
+      `Type-aware smoke check failed: ${taSmoke.missing.join(", ")} not reported.\n${lastLines(taSmoke.output, 8)}\n` +
+        "`lint:strict` may not catch type errors. This does not block setup; run `npx oxlint-kit doctor --smoke` after fixing.",
+    );
+    return;
+  }
+  log.ok("Type-aware smoke test passed (tsgolint reports type errors).");
 }
 
 function recordBaseline(paths: ProjectPaths, log: Logger): "recorded" | "failed" {
@@ -246,7 +253,7 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
       changed.push("package.json (devDependencies)", "lockfile");
     }
     if (options.smoke) {
-      smokeGate(env, paths, profile, stagedConfig, log, changed);
+      smokeGate(env, paths, stagedConfig, log);
       result.smoke = "passed";
     } else {
       log.warn("Smoke test skipped (--no-smoke).");

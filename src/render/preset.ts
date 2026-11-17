@@ -51,13 +51,6 @@ export function renderPreset(preset: PresetId, profile: Profile, mode: Mode): st
     );
   }
 
-  if (preset === "sonar") {
-    return (
-      `${header}import { defineConfig } from "oxlint";\n\n` +
-      `export default defineConfig({\n  jsPlugins: [{ name: "sonarjs", specifier: "eslint-plugin-sonarjs" }],\n  rules: ${rules},\n});\n`
-    );
-  }
-
   return (
     `${header}import { defineConfig } from "oxlint";\n\n` +
     `export default defineConfig({\n  plugins: ${JSON.stringify(PRESET_PLUGINS[preset])},\n  rules: ${rules},\n});\n`
