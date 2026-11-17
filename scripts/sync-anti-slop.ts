@@ -2,7 +2,8 @@
 //   node scripts/sync-anti-slop.ts               re-vendor the locked (or default) commit
 //   node scripts/sync-anti-slop.ts --sha <sha>   vendor a specific commit
 //   node scripts/sync-anti-slop.ts --head        vendor upstream HEAD
-//   node scripts/sync-anti-slop.ts --check       verify vendor/ matches the lock (CI, prepublish)
+//   node scripts/sync-anti-slop.ts --check       verify vendor/ matches the locks (CI, prepublish)
+//   node scripts/sync-anti-slop.ts --rehash-kira refresh vendor/kira.lock.json after a reviewed port edit
 import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -15,6 +16,8 @@ const DEFAULT_SHA = "13909c9e07590f5a85d93c62712259fe14a883f7";
 const ROOT = join(import.meta.dirname, "..");
 const VENDOR = join(ROOT, "vendor", "anti-slop");
 const LOCK = join(ROOT, "vendor", "anti-slop.lock.json");
+const KIRA = join(ROOT, "vendor", "kira");
+const KIRA_LOCK = join(ROOT, "vendor", "kira.lock.json");
 
 interface Lock {
   repo: string;
@@ -27,6 +30,7 @@ const { values } = parseArgs({
     sha: { type: "string" },
     head: { type: "boolean", default: false },
     check: { type: "boolean", default: false },
+    "rehash-kira": { type: "boolean", default: false },
   },
 });
 
@@ -43,7 +47,28 @@ if (values.check) {
     console.error("vendor/anti-slop does not match vendor/anti-slop.lock.json. Re-run `bun run sync-anti-slop`.");
     process.exit(1);
   }
-  console.log(`vendor/anti-slop OK (${lock.sha.slice(0, 12)})`);
+  const kiraLock = existsSync(KIRA_LOCK) ? (JSON.parse(readFileSync(KIRA_LOCK, "utf8")) as Lock) : null;
+  if (!kiraLock || !existsSync(join(KIRA, "index.ts"))) {
+    console.error("vendor/kira is missing. It is a committed port; see vendor/kira/UPSTREAM.md.");
+    process.exit(1);
+  }
+  if (hashDir(KIRA) !== kiraLock.contentHash) {
+    console.error("vendor/kira does not match vendor/kira.lock.json. Review the edits, then run `node scripts/sync-anti-slop.ts --rehash-kira`.");
+    process.exit(1);
+  }
+  console.log(`vendor/anti-slop OK (${lock.sha.slice(0, 12)}), vendor/kira OK (${kiraLock.sha.slice(0, 12)})`);
+  process.exit(0);
+}
+
+if (values["rehash-kira"]) {
+  const lock = existsSync(KIRA_LOCK) ? (JSON.parse(readFileSync(KIRA_LOCK, "utf8")) as Lock) : null;
+  if (!lock || !existsSync(join(KIRA, "index.ts"))) {
+    console.error("vendor/kira is missing; nothing to rehash.");
+    process.exit(1);
+  }
+  const contentHash = hashDir(KIRA);
+  writeFileSync(KIRA_LOCK, `${JSON.stringify({ ...lock, contentHash }, null, 2)}\n`);
+  console.log(`Rehashed vendor/kira (${contentHash.slice(0, 12)}). Record the change in vendor/kira/UPSTREAM.md and add a changeset.`);
   process.exit(0);
 }
 

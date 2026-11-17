@@ -84,7 +84,7 @@ export const initCommand = defineCommand({
     smoke: { type: "boolean", default: true, description: "Run the post-install smoke test", negativeDescription: "Skip the smoke test" },
     "dry-run": { type: "boolean", description: "Print the plan without changing anything" },
     "allow-dirty": { type: "boolean", description: "Do not refuse on a dirty git working tree" },
-    force: { type: "boolean", description: "Replace an edited or unrecognized tools/oxlint/anti-slop" },
+    force: { type: "boolean", description: "Replace edited or unrecognized tools/oxlint vendored copies" },
   },
   async run({ args, rawArgs }) {
     await runCommand(args, async ({ root, log }) => {

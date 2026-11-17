@@ -1,13 +1,13 @@
 # ITSKAZU-OXLINT-RULES-KIT-TS
 
 Profile-based Oxlint setup. One command generates layered presets (base, framework,
-sonar, vendored anti-slop, strict), a thin `oxlint.config.ts`, package scripts,
+sonar, vendored anti-slop + kira, strict), a thin `oxlint.config.ts`, package scripts,
 Prettier wiring and an optional violation baseline for CI.
 
 ## Use
 
     npx @kiranaide/oxlint-kit init      # interactive wizard in a terminal
-    npx @kiranaide/oxlint-kit update    # tested versions + bundled anti-slop, shows a diff first
+    npx @kiranaide/oxlint-kit update    # tested versions + bundled vendored rules, shows a diff first
     npx @kiranaide/oxlint-kit doctor    # read-only diagnosis
 
 Requires Node 22.18+.
@@ -17,6 +17,18 @@ Requires Node 22.18+.
 `react-ts`, `next`, `ts`, `node` are stable. `vue` and `svelte` are experimental:
 Oxlint only partly supports those files and JS-plugin rules may not run on them.
 Without `--profile`, the profile is detected from your dependencies.
+
+### Vendored plugins
+
+The `anti-slop` preset loads two vendored JS plugins through `jsPlugins`:
+`anti-slop` (upstream dmmulroy/anti-slop, synced by `bun run sync-anti-slop`) and
+`kira` — five comment/test-hygiene rules ported from Kiranaide/t3-kira without the
+`effect` dependency: `require-suppression-reason`, `no-low-value-comments`,
+`no-test-in-loop`, `no-wall-clock-in-tests`, `no-test-timeout-or-unreasoned-skip`.
+Kira rules are soft (warn in adopt, error in strict); the test rules only run on
+`*.test.*` / `*.spec.*` files. Both copies are hash-checked, and
+`tools/oxlint/package.json` scopes them to ESM. Projects with `"type": "commonjs"`
+must rename `oxlint.config.ts` to `oxlint.config.mts` (doctor warns).
 
 ### Common flags
 
@@ -66,6 +78,8 @@ In the editor, set `typeAware: true` in the Oxc VS Code extension settings to ma
 
 Bumping tested versions: edit `src/compat.ts`, run the E2E suite, add a changeset.
 Bumping anti-slop: `bun run sync-anti-slop --head` (or `--sha <sha>`), review `git diff vendor/`.
+Editing the kira port: review the diff, `node scripts/sync-anti-slop.ts --rehash-kira`,
+update `vendor/kira/UPSTREAM.md`, add a changeset.
 
 ## Release
 

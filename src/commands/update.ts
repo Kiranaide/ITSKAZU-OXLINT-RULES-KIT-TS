@@ -11,7 +11,7 @@ import { printChanges, printReport } from "../ui/report";
 import { commonArgs, parseMode, parsePm, parseProfile, runCommand } from "./shared";
 
 export const updateCommand = defineCommand({
-  meta: { name: "update", description: "Regenerate presets and move to this CLI's tested versions and bundled anti-slop" },
+  meta: { name: "update", description: "Regenerate presets and move to this CLI's tested versions and bundled vendored rules" },
   args: {
     ...commonArgs,
     profile: { type: "string", description: `Switch profile: ${PROFILE_IDS.join(", ")}` },
@@ -20,7 +20,7 @@ export const updateCommand = defineCommand({
     smoke: { type: "boolean", default: true, description: "Run the smoke test", negativeDescription: "Skip the smoke test" },
     "dry-run": { type: "boolean", description: "Print the plan without changing anything" },
     "allow-dirty": { type: "boolean", description: "Do not refuse on a dirty git working tree" },
-    force: { type: "boolean", description: "Replace an edited or unrecognized tools/oxlint/anti-slop" },
+    force: { type: "boolean", description: "Replace edited or unrecognized tools/oxlint vendored copies" },
   },
   async run({ args }) {
     await runCommand(args, async ({ root, log }) => {
@@ -43,7 +43,7 @@ export const updateCommand = defineCommand({
           allowDirty: Boolean(args["allow-dirty"]),
           force: Boolean(args.force),
           confirmChanges: async (changes) => {
-            if (isEmptyDiff(changes.presets) && isEmptyDiff(changes.antiSlop) && changes.deps.toInstall.length === 0) {
+            if (isEmptyDiff(changes.presets) && isEmptyDiff(changes.antiSlop) && isEmptyDiff(changes.kira) && changes.deps.toInstall.length === 0) {
               log.ok("Already up to date.");
               return true;
             }

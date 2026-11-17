@@ -43,6 +43,55 @@ describe("vendoredOwnership", () => {
   });
 });
 
+describe("vendoredOwnership with kira", () => {
+  const writeKira = (content = "export {};\n") => {
+    mkdirSync(paths.kira, { recursive: true });
+    writeFileSync(join(paths.kira, "index.ts"), content);
+  };
+  const writeState = (kira?: { contentHash: string }) =>
+    writeFileSync(
+      paths.state,
+      JSON.stringify({
+        tool: "test",
+        version: "0.0.0",
+        profile: "ts",
+        mode: "adopt",
+        prettier: true,
+        baseline: false,
+        antiSlop: { repo: "r", sha: "a".repeat(40), contentHash: hashDir(paths.vendored) },
+        ...(kira ? { kira: { repo: "r", sha: "b".repeat(40), contentHash: kira.contentHash } } : {}),
+      }),
+    );
+
+  it("is managed when both copies match the record", () => {
+    writeVendored();
+    writeKira();
+    writeState({ contentHash: hashDir(paths.kira) });
+    expect(vendoredOwnership(paths)).toBe("managed");
+  });
+
+  it("flags kira edits even when anti-slop is managed", () => {
+    writeVendored();
+    writeKira();
+    writeState({ contentHash: hashDir(paths.kira) });
+    writeFileSync(join(paths.kira, "index.ts"), "export const edited = true;\n");
+    expect(vendoredOwnership(paths)).toBe("edited");
+  });
+
+  it("stays managed for old records without a kira entry", () => {
+    writeVendored();
+    writeState();
+    expect(vendoredOwnership(paths)).toBe("managed");
+  });
+
+  it("is unknown when kira exists without a record", () => {
+    writeVendored();
+    writeKira();
+    writeState();
+    expect(vendoredOwnership(paths)).toBe("unknown");
+  });
+});
+
 it("reads legacy settings from the preset header", () => {
   mkdirSync(paths.presets, { recursive: true });
   writeFileSync(

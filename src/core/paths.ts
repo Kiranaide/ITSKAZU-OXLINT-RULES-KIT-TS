@@ -9,6 +9,9 @@ export function projectPaths(root: string) {
     prettierignore: join(root, ".prettierignore"),
     oxlintDir,
     vendored: join(oxlintDir, "anti-slop"),
+    kira: join(oxlintDir, "kira"),
+    // Scopes the vendored .ts plugins and presets to ESM even in type:commonjs projects.
+    esmScope: join(oxlintDir, "package.json"),
     presets: join(oxlintDir, "presets"),
     state: join(oxlintDir, "oxlint-kit.json"),
     legacyLock: join(oxlintDir, "anti-slop.lock.json"),

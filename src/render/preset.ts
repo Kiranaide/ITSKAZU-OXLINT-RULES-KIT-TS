@@ -46,8 +46,9 @@ export function renderPreset(preset: PresetId, profile: Profile, mode: Mode): st
       : "";
     return (
       `${header}import { fileURLToPath } from "node:url";\n\nimport { defineConfig } from "oxlint";\n\n` +
-      `const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));\n\n` +
-      `export default defineConfig({\n  jsPlugins: [{ name: "anti-slop", specifier: entry }],\n  rules: ${rules},${overrides}\n});\n`
+      `const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));\n` +
+      `const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));\n\n` +
+      `export default defineConfig({\n  jsPlugins: [\n    { name: "anti-slop", specifier: antiSlop },\n    { name: "kira", specifier: kira },\n  ],\n  rules: ${rules},${overrides}\n});\n`
     );
   }
 

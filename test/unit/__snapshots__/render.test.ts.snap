@@ -7,10 +7,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -29,7 +33,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "warn",
     "anti-slop/no-unknown-returns": "warn",
     "anti-slop/no-unknown-type-aliases": "warn",
-    "anti-slop/require-readable-spacing": "warn"
+    "anti-slop/require-readable-spacing": "warn",
+    "kira/require-suppression-reason": "warn",
+    "kira/no-low-value-comments": "warn",
+    "kira/no-test-in-loop": "warn",
+    "kira/no-wall-clock-in-tests": "warn",
+    "kira/no-test-timeout-or-unreasoned-skip": "warn"
   },
   overrides: [
     {
@@ -48,10 +57,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -70,7 +83,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "error",
     "anti-slop/no-unknown-returns": "error",
     "anti-slop/no-unknown-type-aliases": "error",
-    "anti-slop/require-readable-spacing": "error"
+    "anti-slop/require-readable-spacing": "error",
+    "kira/require-suppression-reason": "error",
+    "kira/no-low-value-comments": "error",
+    "kira/no-test-in-loop": "error",
+    "kira/no-wall-clock-in-tests": "error",
+    "kira/no-test-timeout-or-unreasoned-skip": "error"
   },
   overrides: [
     {
@@ -89,10 +107,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -111,7 +133,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "warn",
     "anti-slop/no-unknown-returns": "warn",
     "anti-slop/no-unknown-type-aliases": "warn",
-    "anti-slop/require-readable-spacing": "warn"
+    "anti-slop/require-readable-spacing": "warn",
+    "kira/require-suppression-reason": "warn",
+    "kira/no-low-value-comments": "warn",
+    "kira/no-test-in-loop": "warn",
+    "kira/no-wall-clock-in-tests": "warn",
+    "kira/no-test-timeout-or-unreasoned-skip": "warn"
   },
 });
 "
@@ -124,10 +151,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -146,7 +177,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "error",
     "anti-slop/no-unknown-returns": "error",
     "anti-slop/no-unknown-type-aliases": "error",
-    "anti-slop/require-readable-spacing": "error"
+    "anti-slop/require-readable-spacing": "error",
+    "kira/require-suppression-reason": "error",
+    "kira/no-low-value-comments": "error",
+    "kira/no-test-in-loop": "error",
+    "kira/no-wall-clock-in-tests": "error",
+    "kira/no-test-timeout-or-unreasoned-skip": "error"
   },
 });
 "
@@ -159,10 +195,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -181,7 +221,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "warn",
     "anti-slop/no-unknown-returns": "warn",
     "anti-slop/no-unknown-type-aliases": "warn",
-    "anti-slop/require-readable-spacing": "warn"
+    "anti-slop/require-readable-spacing": "warn",
+    "kira/require-suppression-reason": "warn",
+    "kira/no-low-value-comments": "warn",
+    "kira/no-test-in-loop": "warn",
+    "kira/no-wall-clock-in-tests": "warn",
+    "kira/no-test-timeout-or-unreasoned-skip": "warn"
   },
   overrides: [
     {
@@ -200,10 +245,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -222,7 +271,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "error",
     "anti-slop/no-unknown-returns": "error",
     "anti-slop/no-unknown-type-aliases": "error",
-    "anti-slop/require-readable-spacing": "error"
+    "anti-slop/require-readable-spacing": "error",
+    "kira/require-suppression-reason": "error",
+    "kira/no-low-value-comments": "error",
+    "kira/no-test-in-loop": "error",
+    "kira/no-wall-clock-in-tests": "error",
+    "kira/no-test-timeout-or-unreasoned-skip": "error"
   },
   overrides: [
     {
@@ -241,10 +295,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -263,7 +321,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "warn",
     "anti-slop/no-unknown-returns": "warn",
     "anti-slop/no-unknown-type-aliases": "warn",
-    "anti-slop/require-readable-spacing": "warn"
+    "anti-slop/require-readable-spacing": "warn",
+    "kira/require-suppression-reason": "warn",
+    "kira/no-low-value-comments": "warn",
+    "kira/no-test-in-loop": "warn",
+    "kira/no-wall-clock-in-tests": "warn",
+    "kira/no-test-timeout-or-unreasoned-skip": "warn"
   },
   overrides: [
     {
@@ -282,10 +345,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -304,7 +371,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "error",
     "anti-slop/no-unknown-returns": "error",
     "anti-slop/no-unknown-type-aliases": "error",
-    "anti-slop/require-readable-spacing": "error"
+    "anti-slop/require-readable-spacing": "error",
+    "kira/require-suppression-reason": "error",
+    "kira/no-low-value-comments": "error",
+    "kira/no-test-in-loop": "error",
+    "kira/no-wall-clock-in-tests": "error",
+    "kira/no-test-timeout-or-unreasoned-skip": "error"
   },
   overrides: [
     {
@@ -323,10 +395,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -345,7 +421,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "warn",
     "anti-slop/no-unknown-returns": "warn",
     "anti-slop/no-unknown-type-aliases": "warn",
-    "anti-slop/require-readable-spacing": "warn"
+    "anti-slop/require-readable-spacing": "warn",
+    "kira/require-suppression-reason": "warn",
+    "kira/no-low-value-comments": "warn",
+    "kira/no-test-in-loop": "warn",
+    "kira/no-wall-clock-in-tests": "warn",
+    "kira/no-test-timeout-or-unreasoned-skip": "warn"
   },
 });
 "
@@ -358,10 +439,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -380,7 +465,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "error",
     "anti-slop/no-unknown-returns": "error",
     "anti-slop/no-unknown-type-aliases": "error",
-    "anti-slop/require-readable-spacing": "error"
+    "anti-slop/require-readable-spacing": "error",
+    "kira/require-suppression-reason": "error",
+    "kira/no-low-value-comments": "error",
+    "kira/no-test-in-loop": "error",
+    "kira/no-wall-clock-in-tests": "error",
+    "kira/no-test-timeout-or-unreasoned-skip": "error"
   },
 });
 "
@@ -393,10 +483,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -415,7 +509,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "warn",
     "anti-slop/no-unknown-returns": "warn",
     "anti-slop/no-unknown-type-aliases": "warn",
-    "anti-slop/require-readable-spacing": "warn"
+    "anti-slop/require-readable-spacing": "warn",
+    "kira/require-suppression-reason": "warn",
+    "kira/no-low-value-comments": "warn",
+    "kira/no-test-in-loop": "warn",
+    "kira/no-wall-clock-in-tests": "warn",
+    "kira/no-test-timeout-or-unreasoned-skip": "warn"
   },
   overrides: [
     {
@@ -434,10 +533,14 @@ import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "oxlint";
 
-const entry = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const antiSlop = fileURLToPath(new URL("../anti-slop/index.ts", import.meta.url));
+const kira = fileURLToPath(new URL("../kira/index.ts", import.meta.url));
 
 export default defineConfig({
-  jsPlugins: [{ name: "anti-slop", specifier: entry }],
+  jsPlugins: [
+    { name: "anti-slop", specifier: antiSlop },
+    { name: "kira", specifier: kira },
+  ],
   rules: {
     "anti-slop/no-chained-type-assertions": "error",
     "anti-slop/no-widen-then-assert": "error",
@@ -456,7 +559,12 @@ export default defineConfig({
     "anti-slop/no-unknown-parameters": "error",
     "anti-slop/no-unknown-returns": "error",
     "anti-slop/no-unknown-type-aliases": "error",
-    "anti-slop/require-readable-spacing": "error"
+    "anti-slop/require-readable-spacing": "error",
+    "kira/require-suppression-reason": "error",
+    "kira/no-low-value-comments": "error",
+    "kira/no-test-in-loop": "error",
+    "kira/no-wall-clock-in-tests": "error",
+    "kira/no-test-timeout-or-unreasoned-skip": "error"
   },
   overrides: [
     {

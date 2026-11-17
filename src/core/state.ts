@@ -15,6 +15,8 @@ export interface InstallState {
   prettier: boolean;
   baseline: boolean;
   antiSlop: { repo: string; sha: string; contentHash: string };
+  /** Absent in records written before the kira plugin shipped; update adds it. */
+  kira?: { repo: string; sha: string; contentHash: string };
 }
 
 export function readState(paths: ProjectPaths): InstallState | null {
@@ -30,6 +32,7 @@ export function readLegacyLock(paths: ProjectPaths): { sha: string; contentHash:
 }
 
 /**
+ * Ownership of the vendored copies (anti-slop and kira), worst of the two:
  * none     no vendored copy yet
  * managed  recorded by this CLI and unchanged
  * legacy   recorded by install-lint.mjs and unchanged (adopted silently)
@@ -38,13 +41,23 @@ export function readLegacyLock(paths: ProjectPaths): { sha: string; contentHash:
  */
 export type Ownership = "none" | "managed" | "legacy" | "edited" | "unknown";
 
+const OWNERSHIP_RANK: Record<Ownership, number> = { none: 0, managed: 1, legacy: 2, unknown: 3, edited: 4 };
+
 export function vendoredOwnership(paths: ProjectPaths): Ownership {
-  if (!existsSync(paths.vendored)) return "none";
   const state = readState(paths);
-  const expected = state?.antiSlop.contentHash ?? readLegacyLock(paths)?.contentHash;
-  if (!expected) return "unknown";
-  if (hashDir(paths.vendored) !== expected) return "edited";
-  return state ? "managed" : "legacy";
+  let slop: Ownership;
+  if (!existsSync(paths.vendored)) slop = "none";
+  else {
+    const expected = state?.antiSlop.contentHash ?? readLegacyLock(paths)?.contentHash;
+    if (!expected) slop = "unknown";
+    else if (hashDir(paths.vendored) !== expected) slop = "edited";
+    else slop = state ? "managed" : "legacy";
+  }
+  let kira: Ownership;
+  if (!existsSync(paths.kira)) kira = "none";
+  else if (!state?.kira?.contentHash) kira = "unknown";
+  else kira = hashDir(paths.kira) === state.kira.contentHash ? "managed" : "edited";
+  return OWNERSHIP_RANK[slop] >= OWNERSHIP_RANK[kira] ? slop : kira;
 }
 
 export interface InstalledSettings {
