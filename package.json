@@ -1,7 +1,7 @@
 {
   "name": "@kiranaide/oxlint-kit",
   "version": "0.1.0",
-  "description": "Profile-based Oxlint setup: generated presets, sonarjs, vendored anti-slop, Prettier and a violation baseline.",
+  "description": "Profile-based Oxlint setup: generated presets, native sonar-style checks, vendored anti-slop, Prettier and a violation baseline.",
   "keywords": [
     "oxlint",
     "lint",
@@ -36,26 +36,23 @@
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "sync-anti-slop": "node scripts/sync-anti-slop.ts",
-    "gen:sonar": "node scripts/gen-sonar-preset.ts",
     "check-vendor": "node scripts/sync-anti-slop.ts --check",
-    "prepublishOnly": "bun run check-vendor && bun run gen:sonar && bun run build",
+    "prepublishOnly": "bun run check-vendor && bun run build",
     "changeset": "changeset",
     "release": "changeset publish"
   },
   "dependencies": {
-    "@clack/prompts": "^0.11.0",
-    "citty": "^0.1.6",
+    "@clack/prompts": "^1.9.0",
+    "citty": "^0.2.2",
     "cross-spawn": "^7.0.6",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.0",
+    "@changesets/cli": "^3.0.3",
     "@types/cross-spawn": "^6.0.6",
-    "@types/node": "^22.18.0",
-    "@typescript/native": "npm:typescript@^7.0.2",
-    "eslint-plugin-sonarjs": "^4.2.2",
-    "tsup": "^8.5.0",
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vitest": "^3.2.0"
+    "@types/node": "^26.6.6",
+    "tsup": "^9.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   }
 }

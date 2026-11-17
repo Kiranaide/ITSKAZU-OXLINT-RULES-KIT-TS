@@ -13,7 +13,7 @@ export type RuleSpec = readonly [name: string, layer: Layer, options?: unknown];
 export const PRESET_IDS = ["base", "react", "next", "node", "sonar", "anti-slop", "strict"] as const;
 export type PresetId = (typeof PRESET_IDS)[number];
 
-/** Native Oxlint plugins enabled per preset. sonar and anti-slop load through jsPlugins. */
+/** Native Oxlint plugins enabled per preset. anti-slop loads through jsPlugins. */
 export const PRESET_PLUGINS: Record<PresetId, string[]> = {
   base: ["typescript", "unicorn", "oxc"],
   react: ["react", "jsx-a11y"],
@@ -85,26 +85,40 @@ export const RULES: Record<PresetId, RuleSpec[]> = {
     ["unicorn/prefer-node-protocol", "soft"],
     ["unicorn/no-process-exit", "soft"],
   ],
-  // Syntax-only Sonar rules: Oxlint JS plugins cannot provide type information.
-  // Hand-curated layers on top of the generated inventory in sonar.generated.ts
-  // (from eslint-plugin-sonarjs 4.2.2; type-aware rules are set "off" there — dead through the bridge).
+  // Sonar-style bug checks mapped to native Oxlint rules. eslint-plugin-sonarjs is
+  // not used: it crashes on TypeScript 7 (no JS compiler API) and Oxlint has no
+  // native sonarjs port yet. Sonar rules without a native equivalent are dropped
+  // (no-identical-functions, no-hardcoded-passwords/secrets, no-clear-text-protocols,
+  // no-collapsible-if, prefer-single-boolean-return, no-nested-template-literals).
   sonar: [
-    ["sonarjs/cognitive-complexity", "soft", 15],
-    ["sonarjs/no-identical-conditions", "hard"],
-    ["sonarjs/no-identical-expressions", "hard"],
-    ["sonarjs/no-all-duplicated-branches", "hard"],
-    ["sonarjs/no-duplicated-branches", "hard"],
-    ["sonarjs/no-hardcoded-passwords", "hard"],
-    ["sonarjs/no-hardcoded-secrets", "hard"],
-    ["sonarjs/no-clear-text-protocols", "hard"],
-    ["sonarjs/no-useless-react-setstate", "hard"],
-    ["sonarjs/no-collapsible-if", "soft"],
-    ["sonarjs/no-redundant-boolean", "soft"],
-    ["sonarjs/no-inverted-boolean-check", "soft"],
-    ["sonarjs/prefer-single-boolean-return", "soft"],
-    ["sonarjs/no-identical-functions", "soft"],
-    ["sonarjs/no-nested-template-literals", "soft"],
-    ["sonarjs/no-redundant-jump", "soft"],
+    // sonarjs/no-identical-conditions, no-duplicated-branches, no-all-duplicated-branches
+    ["eslint/no-dupe-else-if", "hard"],
+    // sonarjs/no-identical-expressions (self-comparison subset)
+    ["eslint/no-self-compare", "hard"],
+    ["eslint/no-constant-binary-expression", "hard"],
+    // sonarjs/no-redundant-boolean
+    ["eslint/no-extra-boolean-cast", "soft"],
+    // sonarjs/no-inverted-boolean-check
+    ["eslint/no-negated-condition", "soft"],
+    // sonarjs/no-redundant-jump
+    ["eslint/no-useless-return", "soft"],
+    // Further native bug checks in the same spirit.
+    ["eslint/no-constant-condition", "hard"],
+    ["eslint/no-dupe-keys", "hard"],
+    ["eslint/no-duplicate-case", "hard"],
+    ["eslint/no-self-assign", "hard"],
+    ["eslint/no-fallthrough", "hard"],
+    ["eslint/no-unsafe-negation", "hard"],
+    ["eslint/no-unsafe-optional-chaining", "hard"],
+    ["eslint/use-isnan", "hard"],
+    ["eslint/valid-typeof", "hard"],
+    ["eslint/no-compare-neg-zero", "hard"],
+    ["eslint/no-loss-of-precision", "hard"],
+    ["eslint/no-async-promise-executor", "hard"],
+    ["eslint/no-promise-executor-return", "hard"],
+    ["eslint/no-template-curly-in-string", "soft"],
+    ["eslint/no-return-assign", "soft"],
+    ["eslint/no-sequences", "soft"],
   ],
   "anti-slop": [
     ["anti-slop/no-chained-type-assertions", "hard"],

@@ -4,17 +4,19 @@ import { exec } from "../env/exec";
 import { execCommand, type PackageManager } from "../env/pm";
 
 export const SMOKE_FIXTURE = `export function smoke(a: number): boolean {
-  if (a > 1 && a > 1) {
+  if (a > 1) {
     return true;
   }
   return false;
 }
 
+export const same = (n: number): boolean => n === n;
+
 export const doubled = [1, 2, 3].filter((n) => n > 1).map((n) => n * 2);
 `;
 
-/** One rule from each JS plugin: proves both load and report. */
-export const SMOKE_EXPECTED = ["sonarjs(no-identical-expressions)", "anti-slop(no-array-filter-map)"];
+/** One native sonar-preset rule and one vendored JS-plugin rule: proves both layers report. */
+export const SMOKE_EXPECTED = ["eslint(no-self-compare)", "anti-slop(no-array-filter-map)"];
 
 /** Proves tsgolint actually ran type-aware when asked to. */
 export const SMOKE_TYPEAWARE_EXPECTED = "typescript(no-floating-promises)";

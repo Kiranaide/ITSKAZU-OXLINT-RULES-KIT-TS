@@ -41,7 +41,6 @@ export function planDependencies(root: string, profile: Profile, prettier: boole
   }
 
   decide("oxlint-tsgolint");
-  if (profile.presets.includes("sonar")) decide("eslint-plugin-sonarjs");
   if (prettier) decide("prettier");
   return plan;
 }

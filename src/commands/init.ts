@@ -2,9 +2,7 @@ import * as p from "@clack/prompts";
 import { defineCommand } from "citty";
 import { join } from "node:path";
 import { install } from "../core/install";
-import { resolveTsDecision } from "../core/tsdecision";
 import type { PackageJson } from "../env/detect";
-import { detectEnvironment } from "../env/detect";
 import { readJson } from "../env/fs";
 import { PKG_NAME } from "../meta";
 import { detectProfile, PROFILE_IDS, PROFILES, type Profile, type ProfileId } from "../profiles";
@@ -92,15 +90,11 @@ export const initCommand = defineCommand({
     await runCommand(args, async ({ root, log }) => {
       const settings = await resolveSettings(root, log, args, rawArgs);
       const askFirst = log.interactive && !args.yes && !args["dry-run"];
-      const pkg = readJson<PackageJson>(join(root, "package.json")) ?? {};
-      const env = { ...detectEnvironment(root, parsePm(args.pm)), pkg };
-      const tsDecision = await resolveTsDecision(env, Boolean(settings.profile.presets.includes("sonar")), log, askFirst);
       const result = await install(
         {
           root,
           pm: parsePm(args.pm),
           ...settings,
-          tsDecision,
           smoke: args.smoke !== false,
           deps: "keep",
           dryRun: Boolean(args["dry-run"]),

@@ -5,7 +5,6 @@ import { readJson } from "./fs";
 import { gitStatus } from "./git";
 import { detectPackageManager, type PackageManager } from "./pm";
 import { readTsStrict } from "./tsconfig";
-import { detectTsState, findTsOverrides, type TsState } from "./typescript";
 import { detectWorkspace, type WorkspaceInfo } from "./workspace";
 
 export interface PackageJson {
@@ -26,8 +25,6 @@ export interface Environment {
   dirty: string[];
   hasTsconfig: boolean;
   tsStrict: boolean | null;
-  tsState: TsState;
-  tsOverrides: string[];
   eslintConfigs: string[];
   biomeConfigs: string[];
   hasPrettierConfig: boolean;
@@ -59,8 +56,6 @@ export function detectEnvironment(root: string, pmOverride?: PackageManager): En
     dirty: git.dirty,
     hasTsconfig: existsSync(tsconfig),
     tsStrict: readTsStrict(tsconfig),
-    tsState: detectTsState(root, pkg),
-    tsOverrides: findTsOverrides(pkg),
     eslintConfigs: present(ESLINT_CONFIGS),
     biomeConfigs: present(["biome.json", "biome.jsonc"]),
     hasPrettierConfig: Boolean(pkg.prettier) || present(PRETTIER_CONFIGS).length > 0,
