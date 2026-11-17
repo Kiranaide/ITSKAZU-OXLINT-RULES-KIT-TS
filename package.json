@@ -1,6 +1,6 @@
 {
   "name": "@kiranaide/oxlint-kit",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Profile-based Oxlint setup: generated presets, native sonar-style checks, vendored anti-slop and kira rules, Prettier and a violation baseline.",
   "keywords": [
     "oxlint",
