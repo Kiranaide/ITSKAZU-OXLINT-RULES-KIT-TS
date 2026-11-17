@@ -1,6 +1,7 @@
 import { PKG_NAME, PKG_VERSION } from "../meta";
 import type { Profile } from "../profiles";
 import { PRESET_PLUGINS, RULES, type Layer, type Mode, type PresetId, type RuleSpec } from "../rules";
+import { GENERATED_SONAR_RULES } from "../rules/sonar.generated";
 
 export const severity = (layer: Layer, mode: Mode): "error" | "warn" =>
   layer === "hard" || mode === "strict" ? "error" : "warn";
@@ -18,6 +19,15 @@ export function presetRules(preset: PresetId, profile: Profile, mode: Mode): Rec
     ]);
   }
   if (preset === "strict" && profile.noTernary) specs.push(["eslint/no-ternary", "soft"]);
+  if (preset === "sonar") {
+    // Hand-curated layers win; generated "off" entries (type-aware, ALWAYS_OFF) stay excluded.
+    const curated: Record<string, true> = {};
+    for (const [name] of specs) curated[name] = true;
+    for (const [name, layer] of GENERATED_SONAR_RULES) {
+      if (layer === "off" || curated[name]) continue;
+      specs.push([name, layer]);
+    }
+  }
 
   const rules: Record<string, unknown> = {};
   for (const [name, layer, options] of specs) {
@@ -36,7 +46,7 @@ export function generatedHeader(profile: Profile, mode: Mode): string {
   );
 }
 
-export function renderPreset(preset: PresetId, profile: Profile, mode: Mode): string {
+export function renderPreset(preset: PresetId, profile: Profile, mode: Mode, options?: { sonarSpecifier?: string }): string {
   const header = generatedHeader(profile, mode);
   const rules = literal(presetRules(preset, profile, mode));
 
@@ -52,6 +62,14 @@ export function renderPreset(preset: PresetId, profile: Profile, mode: Mode): st
   }
 
   if (preset === "sonar") {
+    if (options?.sonarSpecifier === "shim") {
+      // Preset files live in tools/oxlint/presets; the shim is written to tools/oxlint/.
+      return (
+        `${header}import { fileURLToPath } from "node:url";\n\nimport { defineConfig } from "oxlint";\n\n` +
+        `const entry = fileURLToPath(new URL("../sonarjs-ts6.cjs", import.meta.url));\n\n` +
+        `export default defineConfig({\n  jsPlugins: [{ name: "sonarjs", specifier: entry }],\n  rules: ${rules},\n});\n`
+      );
+    }
     return (
       `${header}import { defineConfig } from "oxlint";\n\n` +
       `export default defineConfig({\n  jsPlugins: [{ name: "sonarjs", specifier: "eslint-plugin-sonarjs" }],\n  rules: ${rules},\n});\n`

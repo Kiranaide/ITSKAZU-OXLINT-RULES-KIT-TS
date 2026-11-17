@@ -16,6 +16,9 @@ export const doubled = [1, 2, 3].filter((n) => n > 1).map((n) => n * 2);
 /** One rule from each JS plugin: proves both load and report. */
 export const SMOKE_EXPECTED = ["sonarjs(no-identical-expressions)", "anti-slop(no-array-filter-map)"];
 
+/** Proves tsgolint actually ran type-aware when asked to. */
+export const SMOKE_TYPEAWARE_EXPECTED = "typescript(no-floating-promises)";
+
 export interface Diagnostic {
   code?: string;
   severity?: string;
@@ -37,13 +40,14 @@ export interface SmokeResult {
   output: string;
 }
 
-export function runSmoke(root: string, pm: PackageManager, configPath: string, workDir: string): SmokeResult {
+export function runSmoke(root: string, pm: PackageManager, configPath: string, workDir: string, typeAware = false): SmokeResult {
   mkdirSync(workDir, { recursive: true });
   const fixture = join(workDir, "fixture.ts");
   writeFileSync(fixture, SMOKE_FIXTURE);
-  const [cmd, args] = execCommand(pm, ["oxlint", "-c", configPath, "-f", "json", fixture]);
+  const [cmd, args] = execCommand(pm, ["oxlint", ...(typeAware ? ["--type-aware"] : []), "-c", configPath, "-f", "json", fixture]);
   const result = exec(cmd, args, { cwd: root });
   const output = `${result.stdout}${result.stderr}`;
   const missing = SMOKE_EXPECTED.filter((code) => !output.includes(code));
+  if (typeAware && !output.includes(SMOKE_TYPEAWARE_EXPECTED)) missing.push(SMOKE_TYPEAWARE_EXPECTED);
   return { ok: missing.length === 0, missing, output };
 }

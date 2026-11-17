@@ -36,8 +36,9 @@
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "sync-anti-slop": "node scripts/sync-anti-slop.ts",
+    "gen:sonar": "node scripts/gen-sonar-preset.ts",
     "check-vendor": "node scripts/sync-anti-slop.ts --check",
-    "prepublishOnly": "bun run check-vendor && bun run build",
+    "prepublishOnly": "bun run check-vendor && bun run gen:sonar && bun run build",
     "changeset": "changeset",
     "release": "changeset publish"
   },
@@ -51,8 +52,10 @@
     "@changesets/cli": "^2.29.0",
     "@types/cross-spawn": "^6.0.6",
     "@types/node": "^22.18.0",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "eslint-plugin-sonarjs": "^4.2.2",
     "tsup": "^8.5.0",
-    "typescript": "^5.9.0",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^3.2.0"
   }
 }

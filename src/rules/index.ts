@@ -38,15 +38,21 @@ export const RULES: Record<PresetId, RuleSpec[]> = {
     ["typescript/no-unsafe-type-assertion", "hard"],
     ["typescript/no-floating-promises", "hard"],
     ["typescript/no-misused-promises", "hard"],
+    ["typescript/await-thenable", "hard"],
+    ["typescript/only-throw-error", "hard"],
     ["typescript/no-unnecessary-condition", "soft"],
     ["typescript/no-unnecessary-type-conversion", "soft"],
     ["typescript/no-unnecessary-type-parameters", "soft"],
+    ["typescript/no-unnecessary-type-assertion", "soft"],
     ["typescript/no-useless-default-assignment", "soft"],
     ["typescript/prefer-find", "soft"],
     ["typescript/prefer-nullish-coalescing", "soft"],
     ["typescript/prefer-optional-chain", "soft"],
     ["typescript/prefer-readonly", "soft"],
     ["typescript/prefer-string-starts-ends-with", "soft"],
+    ["typescript/restrict-template-expressions", "soft"],
+    ["typescript/strict-boolean-expressions", "soft"],
+    ["typescript/switch-exhaustiveness-check", "soft"],
     ["oxc/no-accumulating-spread", "soft"],
     ["eslint/no-useless-call", "soft"],
     ["unicorn/prefer-array-find", "soft"],
@@ -80,7 +86,8 @@ export const RULES: Record<PresetId, RuleSpec[]> = {
     ["unicorn/no-process-exit", "soft"],
   ],
   // Syntax-only Sonar rules: Oxlint JS plugins cannot provide type information.
-  // Names verified against eslint-plugin-sonarjs 4.2.2.
+  // Hand-curated layers on top of the generated inventory in sonar.generated.ts
+  // (from eslint-plugin-sonarjs 4.2.2; type-aware rules are set "off" there — dead through the bridge).
   sonar: [
     ["sonarjs/cognitive-complexity", "soft", 15],
     ["sonarjs/no-identical-conditions", "hard"],
@@ -92,7 +99,6 @@ export const RULES: Record<PresetId, RuleSpec[]> = {
     ["sonarjs/no-clear-text-protocols", "hard"],
     ["sonarjs/no-useless-react-setstate", "hard"],
     ["sonarjs/no-collapsible-if", "soft"],
-    ["sonarjs/no-small-switch", "soft"],
     ["sonarjs/no-redundant-boolean", "soft"],
     ["sonarjs/no-inverted-boolean-check", "soft"],
     ["sonarjs/prefer-single-boolean-return", "soft"],

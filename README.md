@@ -39,6 +39,22 @@ when a file/rule pair gets worse.
 Run `init` or `update` in the project. A clean legacy install (lockfile hash matches) is
 adopted automatically; its profile and mode are read from the generated preset headers.
 
+### TypeScript 7 and type-aware linting
+
+`lint:strict` and `check` run Oxlint's type-aware rules through `oxlint-tsgolint`, which
+bundles its own compiler: they work on TypeScript 5, 6 and 7 alike.
+
+`eslint-plugin-sonarjs` is different: it requires the TypeScript *JavaScript* API
+(`TypeFlags`), which the native TypeScript 7 compiler no longer ships. If the CLI detects
+plain `typescript@7`, it asks before installing the alias pair — `typescript` resolves to
+`@typescript/typescript6` (the TS 6 API) and `@typescript/native` provides the TS 7 `tsc`.
+Declining keeps your `typescript` untouched and loads SonarJS through a resolution shim
+(`tools/oxlint/sonarjs-ts6.cjs`) instead. Projects that pin `typescript` in
+`overrides`/`resolutions`/`pnpm.overrides` are refused: the pin defeats both options.
+
+In the editor, set `typeAware: true` in the Oxc VS Code extension settings to match
+`lint:strict`.
+
 ## Develop
 
     pnpm install

@@ -24,3 +24,4 @@ export const BIN_NAME = "oxlint-kit";
 export const VENDOR_DIR = join(PACKAGE_ROOT, "vendor", "anti-slop");
 export const VENDOR_LOCK = join(PACKAGE_ROOT, "vendor", "anti-slop.lock.json");
 export const BASELINE_TEMPLATE = join(PACKAGE_ROOT, "templates", "baseline-check.mjs");
+export const SONAR_FALLBACK_TEMPLATE = join(PACKAGE_ROOT, "templates", "sonarjs-ts6.cjs");

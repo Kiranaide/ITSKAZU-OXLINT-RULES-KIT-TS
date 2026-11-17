@@ -1,8 +1,13 @@
 import { defineCommand } from "citty";
+import { join } from "node:path";
 import { isEmptyDiff } from "../core/diff";
 import { install } from "../core/install";
 import { projectPaths } from "../core/paths";
 import { installedSettings } from "../core/state";
+import { resolveTsDecision } from "../core/tsdecision";
+import type { PackageJson } from "../env/detect";
+import { detectEnvironment } from "../env/detect";
+import { readJson } from "../env/fs";
 import { fail } from "../errors";
 import { PKG_NAME } from "../meta";
 import { PROFILE_IDS, PROFILES } from "../profiles";
@@ -29,11 +34,16 @@ export const updateCommand = defineCommand({
       if (current.source === "legacy") log.step("Found a setup created by install-lint.mjs; adopting it.");
 
       const profile = PROFILES[args.profile ? parseProfile(args.profile) : current.profile];
+      const ask = log.interactive && !args.yes && !args["dry-run"];
+      const pkg = readJson<PackageJson>(join(root, "package.json")) ?? {};
+      const env = { ...detectEnvironment(root, parsePm(args.pm)), pkg };
+      const tsDecision = await resolveTsDecision(env, profile.presets.includes("sonar"), log, ask);
       const result = await install(
         {
           root,
           pm: parsePm(args.pm),
           profile,
+          tsDecision,
           mode: args.mode ? parseMode(args.mode) : current.mode,
           prettier: current.prettier,
           baseline: current.baseline,

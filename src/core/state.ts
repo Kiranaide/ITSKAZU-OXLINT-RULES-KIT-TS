@@ -14,6 +14,8 @@ export interface InstallState {
   mode: Mode;
   prettier: boolean;
   baseline: boolean;
+  /** How the sonarjs TypeScript conflict was resolved at install time. */
+  tsResolution: "none" | "alias-pair" | "shim";
   antiSlop: { repo: string; sha: string; contentHash: string };
 }
 

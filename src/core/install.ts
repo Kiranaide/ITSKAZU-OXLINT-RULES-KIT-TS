@@ -5,8 +5,11 @@ import { detectEnvironment, type Environment } from "../env/detect";
 import { exec } from "../env/exec";
 import { findPackageDir } from "../env/fs";
 import { addDevCommand, type PackageManager } from "../env/pm";
+import { tsApiLoads } from "../env/typescript";
+import { tsIncludesEverything } from "../env/tsconfig";
+import { tsPairSpecs } from "./tsdecision";
 import { fail } from "../errors";
-import { BASELINE_TEMPLATE, PKG_NAME, PKG_VERSION } from "../meta";
+import { BASELINE_TEMPLATE, PKG_NAME, PKG_VERSION, SONAR_FALLBACK_TEMPLATE } from "../meta";
 import type { Profile, ProfileId } from "../profiles";
 import { configImportsMatch, configReferencesPresets, configSnippet, renderConfig } from "../render/config";
 import { renderPreset } from "../render/preset";
@@ -23,6 +26,7 @@ import { runSmoke } from "./smoke";
 import { vendoredOwnership, type InstallState, type Ownership } from "./state";
 import { collectViolations, type ViolationSummary } from "./summary";
 import { Transaction } from "./transaction";
+import { planTsAction, type TsDecision } from "./tsdecision";
 import { loadBundledAntiSlop, provenance } from "./vendor";
 
 export interface PendingChanges {
@@ -43,6 +47,11 @@ export interface InstallOptions {
   dryRun: boolean;
   allowDirty: boolean;
   force: boolean;
+  /**
+   * Pre-computed TypeScript decision (init/update ask via planTsAction + confirmAction).
+   * Default: planTsAction(env, sonar-preset) with `install-pair` auto-declined.
+   */
+  tsDecision?: TsDecision;
   /** Called after the plan is printed; returning false stops before any change. */
   confirmPlan?: () => Promise<boolean>;
   /** Called with the staged diff before dependencies are touched (used by `update`). */
@@ -82,6 +91,8 @@ function collectNotes({ env, profile, deps, scripts, configExists, configIsOurs,
   const notes = [...deps.warnings];
   if (!env.hasTsconfig) notes.push("No tsconfig.json found: type-aware rules (`lint:strict`) need one.");
   else if (!env.tsStrict) notes.push('Could not confirm `"strict": true` in tsconfig.json (extends is not followed); the no-unsafe-* rules are noisy without it.');
+  if (env.tsState === "none" && env.hasTsconfig) notes.push("tsconfig.json exists but typescript is not a dependency; `typecheck` needs it.");
+  if (tsIncludesEverything(join(env.root, "tsconfig.json"))) notes.push('tsconfig.json `include` covers the whole tree (e.g. "**/*"): type-aware linting will type-check build output and get slow. Scope it to ["src/**/*"] and exclude dist/build/coverage.');
   if (env.eslintConfigs.length) {
     notes.push(`ESLint config found (${env.eslintConfigs.join(", ")}). Not touched. Running both linters duplicates reports; see \`npx @oxlint/migrate\`.`);
   }
@@ -124,6 +135,17 @@ function smokeGate(env: Environment, paths: ProjectPaths, profile: Profile, stag
     );
   }
   log.ok("Smoke test passed (sonarjs and anti-slop rules load and report).");
+
+  log.step("Smoke test (type-aware): proving tsgolint reports type errors...");
+  const taSmoke = runSmoke(env.root, env.pm, stagedConfig, paths.staging, true);
+  if (!taSmoke.ok) {
+    log.warn(
+      `Type-aware smoke check failed: ${taSmoke.missing.join(", ")} not reported.\n${lastLines(taSmoke.output, 8)}\n` +
+        "`lint:strict` may not catch type errors. This does not block setup; run `npx oxlint-kit doctor --smoke` after fixing.",
+    );
+    return;
+  }
+  log.ok("Type-aware smoke test passed (tsgolint reports type errors).");
 }
 
 function recordBaseline(paths: ProjectPaths, log: Logger): "recorded" | "failed" {
@@ -140,6 +162,10 @@ function recordBaseline(paths: ProjectPaths, log: Logger): "recorded" | "failed"
 export async function install(options: InstallOptions, log: Logger): Promise<InstallResult> {
   const { root, profile, mode } = options;
   const env = detectEnvironment(root, options.pm);
+  const wantsSonar = profile.presets.includes("sonar");
+  const tsDecision = options.tsDecision ?? planTsAction(env, wantsSonar);
+  if (tsDecision.action.kind === "blocked") fail(tsDecision.note ?? "TypeScript setup is incompatible with the sonar preset.");
+  if (tsDecision.note) log.warn(tsDecision.note);
   const paths = projectPaths(root);
   const bundled = loadBundledAntiSlop();
   const deps = planDependencies(root, profile, options.prettier, options.deps);
@@ -227,7 +253,16 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
     cpSync(bundled.dir, stagedVendored, { recursive: true });
     writeFileSync(join(stagedVendored, PROVENANCE_FILE), provenance(bundled));
     for (const preset of profile.presets) {
-      writeFileSync(join(stagedPresets, `${preset}.ts`), renderPreset(preset, profile, mode));
+      writeFileSync(
+        join(stagedPresets, `${preset}.ts`),
+        renderPreset(preset, profile, mode, {
+          sonarSpecifier: tsDecision.action.kind === "fallback-wrapper" ? "shim" : undefined,
+        }),
+      );
+    }
+    if (tsDecision.action.kind === "fallback-wrapper") {
+      // The staged sonar preset resolves ../sonarjs-ts6.cjs; smoke runs against staging.
+      writeFileSync(join(stagedOxlint, "sonarjs-ts6.cjs"), readFileSync(SONAR_FALLBACK_TEMPLATE));
     }
     writeFileSync(stagedConfig, renderConfig(profile));
 
@@ -241,9 +276,29 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
     }
 
     // ---- dependencies + smoke test ---------------------------------------
-    if (deps.toInstall.length) {
-      addDeps(env, deps.toInstall.map((d) => `${d.name}@${d.version}`), log);
-      changed.push("package.json (devDependencies)", "lockfile");
+    const extraDeps: string[] = [];
+    if (tsDecision.action.kind === "install-pair") {
+      extraDeps.push(...tsPairSpecs());
+      changed.push("package.json (typescript alias pair)");
+    } else if (tsDecision.action.kind === "fallback-wrapper") {
+      // Plain dep (NOT aliased): the wrapper redirects sonarjs's require("typescript") to it.
+      extraDeps.push("@typescript/typescript6@^6.0.2");
+      changed.push("package.json (@typescript/typescript6 for the sonarjs shim)");
+    }
+    if (deps.toInstall.length || extraDeps.length) {
+      addDeps(env, [...deps.toInstall.map((d) => `${d.name}@${d.version}`), ...extraDeps], log);
+      if (deps.toInstall.length) changed.push("package.json (devDependencies)", "lockfile");
+    }
+    if (tsDecision.action.kind === "install-pair" || tsDecision.action.kind === "fallback-wrapper") {
+      // Shim path: ambient require("typescript") stays plain TS 7; only sonarjs's resolution is redirected.
+      const gate = tsApiLoads(root, tsDecision.action.kind === "fallback-wrapper" ? "@typescript/typescript6" : "typescript");
+      if (!gate.ok) fail(`TypeScript API check failed after install.\n${gate.detail}`);
+      log.ok(gate.detail);
+    }
+    if (tsDecision.action.kind === "fallback-wrapper") {
+      const entry = join(paths.oxlintDir, "sonarjs-ts6.cjs");
+      tx.writeFile(entry, readFileSync(SONAR_FALLBACK_TEMPLATE));
+      changed.push("tools/oxlint/sonarjs-ts6.cjs (sonarjs loads through the TS 6 API shim)");
     }
     if (options.smoke) {
       smokeGate(env, paths, profile, stagedConfig, log, changed);
@@ -261,6 +316,8 @@ export async function install(options: InstallOptions, log: Logger): Promise<Ins
       mode,
       prettier: options.prettier,
       baseline: options.baseline,
+      tsResolution:
+        tsDecision.action.kind === "install-pair" ? "alias-pair" : tsDecision.action.kind === "fallback-wrapper" ? "shim" : "none",
       antiSlop: { repo: bundled.repo, sha: bundled.sha, contentHash: bundled.contentHash },
     };
     tx.replaceDir(stagedVendored, paths.vendored);
