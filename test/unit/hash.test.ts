@@ -24,3 +24,10 @@ it("changes when content changes", () => {
   writeFileSync(join(dir, "rules", "a.ts"), "export const a = 2;\n");
   expect(hashDir(dir)).not.toBe(before);
 });
+
+it("ignores CRLF line endings", () => {
+  const before = hashDir(dir);
+  writeFileSync(join(dir, "index.ts"), "export {};\r\n");
+  writeFileSync(join(dir, "rules", "a.ts"), "export const a = 1;\r\n");
+  expect(hashDir(dir)).toBe(before);
+});

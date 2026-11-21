@@ -12,11 +12,13 @@ export function listFiles(dir: string, base = dir): string[] {
   });
 }
 
-/** Content hash of a directory, independent of file order; ignores the provenance note. */
+/** Content hash of a directory, independent of file order and line endings; ignores the provenance note. */
 export function hashDir(dir: string): string {
   const hash = createHash("sha256");
   for (const file of listFiles(dir).filter((f) => f !== PROVENANCE_FILE).sort()) {
-    const digest = createHash("sha256").update(readFileSync(join(dir, file))).digest("hex");
+    // git autocrlf checkouts must hash identically to the committed LF bytes.
+    const text = readFileSync(join(dir, file), "utf8").replaceAll("\r\n", "\n");
+    const digest = createHash("sha256").update(text).digest("hex");
     hash.update(`${file}\0${digest}\n`);
   }
   return hash.digest("hex");
